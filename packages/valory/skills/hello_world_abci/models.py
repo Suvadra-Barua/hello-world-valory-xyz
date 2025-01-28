@@ -57,10 +57,11 @@ class SharedState(BaseSharedState):
 
 class HelloWorldParams(BaseParams):
     """Hello World skill parameters."""
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the parameters."""
-        self.hello_world_string: str = self._ensure("hello_world_message", kwargs, str)
+        hello_world_base = self._ensure("hello_world_message", kwargs, str)
+        owner_base = self._ensure("owner", kwargs, str)
+        self.hello_world_string: str = f"{hello_world_base} {owner_base}"
         super().__init__(*args, **kwargs)
 
 
