@@ -69,7 +69,8 @@ models:
       log_dir: ${str:/benchmarks}
   params:
     args:
-      hello_world_message: ${str:HELLO_WORLD!}
+      hello_world_message: ${str:HELLO_WORLD!HELLO_WORLD! The owner's address is}
+      owner: ${str:0x98706C94FeA41946262909B7d0cbc2b03eef1559'}
       reset_pause_duration: ${int:10}
       service_registry_address: ${str:null}
       share_tm_config_on_startup: ${bool:false}
