@@ -204,6 +204,7 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         yield from self.wait_until_round_end()
 
         self.set_done()
+        
 class PrintCountBehaviour(HelloWorldABCIBaseBehaviour):
     """Print Count behaviour."""
 
@@ -233,7 +234,7 @@ class PrintCountBehaviour(HelloWorldABCIBaseBehaviour):
         yield from self.send_a2a_transaction(payload)
         yield from self.wait_until_round_end()
         self.set_done()
-        
+
 class ResetAndPauseBehaviour(HelloWorldABCIBaseBehaviour):
     """Reset behaviour."""
 
