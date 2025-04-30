@@ -20,7 +20,7 @@
 
 from abc import ABC
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from packages.valory.skills.abstract_round_abci.base import (
     AbciApp,
@@ -36,6 +36,7 @@ from packages.valory.skills.abstract_round_abci.base import (
 from packages.valory.skills.hello_world_abci.payloads import (
     CollectRandomnessPayload,
     PrintMessagePayload,
+    PrintCountPayload,
     RegistrationPayload,
     ResetPayload,
     SelectKeeperPayload,
@@ -69,7 +70,11 @@ class SynchronizedData(
             List[str],
             self.db.get_strict("printed_messages"),
         )
-
+        
+    @property
+    def print_count(self) -> int:
+        """Get the number of times PrintMessageRound has executed."""
+        return self.db.get("print_count", 0)
 
 class HelloWorldABCIAbstractRound(AbstractRound, ABC):
     """Abstract round for the Hello World ABCI skill."""
@@ -145,7 +150,27 @@ class PrintMessageRound(CollectDifferentUntilAllRound, HelloWorldABCIAbstractRou
             )
             return synchronized_data, Event.DONE
         return None
+class PrintCountRound(CollectSameUntilThresholdRound):
+    """Round that tracks print message count."""
 
+    payload_class = PrintCountPayload
+    synchronized_data_class = SynchronizedData
+
+    def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
+        """Process the end of the block."""
+        if self.threshold_reached:
+            # Get new count from payload
+            payload = next(iter(self.collection.values()))
+            received_count = cast(PrintCountPayload, payload).count
+            
+            # Update synchronized data with new count
+            synchronized_data = self.synchronized_data.update(
+                synchronized_data_class=self.synchronized_data_class,
+                print_count=received_count,
+            )
+
+            return synchronized_data, Event.DONE
+        return None
 
 class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractRound):
     """A round that represents that consensus is reached (the final round)"""
@@ -218,6 +243,10 @@ class HelloWorldAbciApp(AbciApp[Event]):
             Event.ROUND_TIMEOUT: RegistrationRound,
         },
         PrintMessageRound: {
+            Event.DONE: PrintCountRound,
+            Event.ROUND_TIMEOUT: RegistrationRound,
+        },
+        PrintCountRound: {
             Event.DONE: ResetAndPauseRound,
             Event.ROUND_TIMEOUT: RegistrationRound,
         },

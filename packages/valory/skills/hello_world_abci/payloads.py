@@ -43,6 +43,12 @@ class PrintMessagePayload(BaseTxPayload):
 
     message: str
 
+@dataclass(frozen=True)
+class PrintCountPayload(BaseTxPayload):
+    """Represent a transaction payload of type 'count'."""
+
+    count: int
+
 
 @dataclass(frozen=True)
 class SelectKeeperPayload(BaseTxPayload):

@@ -30,6 +30,7 @@ from packages.valory.skills.abstract_round_abci.behaviours import (
 from packages.valory.skills.hello_world_abci.models import HelloWorldParams, SharedState
 from packages.valory.skills.hello_world_abci.payloads import (
     CollectRandomnessPayload,
+    PrintCountPayload,
     PrintMessagePayload,
     RegistrationPayload,
     ResetPayload,
@@ -38,6 +39,7 @@ from packages.valory.skills.hello_world_abci.payloads import (
 from packages.valory.skills.hello_world_abci.rounds import (
     CollectRandomnessRound,
     HelloWorldAbciApp,
+    PrintCountRound,
     PrintMessageRound,
     RegistrationRound,
     ResetAndPauseRound,
@@ -152,7 +154,6 @@ class SelectKeeperBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         - Wait until ABCI application transitions to the next round.
         - Go to the next behaviour (set done event).
         """
-
         participants = sorted(self.synchronized_data.participants)
         random.seed(self.synchronized_data.most_voted_randomness, 2)  # nosec
         index = random.randint(0, len(participants) - 1)  # nosec
@@ -184,7 +185,6 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         - Wait until ABCI application transitions to the next round.
         - Go to the next behaviour (set done event).
         """
-
         if (
             self.context.agent_address
             == self.synchronized_data.most_voted_keeper_address
@@ -204,7 +204,36 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         yield from self.wait_until_round_end()
 
         self.set_done()
+        
+class PrintCountBehaviour(HelloWorldABCIBaseBehaviour):
+    """Print Count behaviour."""
 
+    matching_round = PrintCountRound
+
+    def async_act(self) -> Generator:
+        """
+        Do the action.
+        Steps:
+        - Get current print count from synchronized data
+        - Increment it
+        - Print status message
+        - Send transaction with new count
+        - Wait for round end
+        """
+        current_count = self.synchronized_data.print_count
+        updated_count = current_count + 1
+
+        message = f"The message has been printed {updated_count} times"
+        print(message)
+
+        payload = PrintCountPayload(
+            sender=self.context.agent_address,
+            count=updated_count
+        )
+
+        yield from self.send_a2a_transaction(payload)
+        yield from self.wait_until_round_end()
+        self.set_done()
 
 class ResetAndPauseBehaviour(HelloWorldABCIBaseBehaviour):
     """Reset behaviour."""
@@ -251,5 +280,6 @@ class HelloWorldRoundBehaviour(AbstractRoundBehaviour):
         CollectRandomnessBehaviour,  # type: ignore
         SelectKeeperBehaviour,  # type: ignore
         PrintMessageBehaviour,  # type: ignore
+        PrintCountBehaviour,  # type: ignore
         ResetAndPauseBehaviour,  # type: ignore
     }
